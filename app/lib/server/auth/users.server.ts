@@ -5,7 +5,7 @@ export function normalizeEmail(emailRaw: string): string {
 }
 
 export function isAdminEmail(email: string): boolean {
-  const list = (env.ADMIN_EMAILS ?? "")
+  const list = (env.ADMIN_EMAILS ?? "tethysplex@gmail.com")
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
