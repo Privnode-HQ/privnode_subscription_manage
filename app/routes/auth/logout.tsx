@@ -1,10 +1,7 @@
 import { Form, redirect } from "react-router";
 import type { Route } from "./+types/logout";
-import {
-  clearSessionCookie,
-  destroySession,
-  getUserFromRequest,
-} from "../../lib/server/auth/session.server";
+import { useI18n } from "../../lib/i18n";
+import { clearSessionCookie, destroySession, getUserFromRequest } from "../../lib/server/auth/session.server";
 
 export async function action({ request }: Route.ActionArgs) {
   const { sessionId } = await getUserFromRequest(request);
@@ -17,10 +14,10 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Logout() {
+  const { t } = useI18n();
   return (
     <Form method="post">
-      <button type="submit">Logout</button>
+      <button type="submit">{t("auth.logout")}</button>
     </Form>
   );
 }
-

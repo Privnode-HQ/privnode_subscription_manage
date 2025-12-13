@@ -5,10 +5,14 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
+  useRouteLoaderData,
 } from "react-router";
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { createT, I18nProvider, localeToHtmlLang, type Locale } from "./lib/i18n";
+import { getLocaleFromRequest } from "./lib/server/locale.server";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -23,9 +27,16 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
+export async function loader({ request }: Route.LoaderArgs) {
+  const locale = getLocaleFromRequest(request);
+  return { locale };
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { locale } = useLoaderData<typeof loader>();
+
   return (
-    <html lang="en">
+    <html lang={localeToHtmlLang(locale)}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -33,7 +44,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
+        <I18nProvider locale={locale}>{children}</I18nProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -46,16 +57,20 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
+  const rootData = useRouteLoaderData<typeof loader>("root");
+  const locale = (rootData?.locale ?? "en") as Locale;
+  const t = createT(locale);
+
+  let message = t("error.oops");
+  let details = t("error.unexpected");
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
+    message = error.status === 404 ? "404" : t("error.error");
     details =
       error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
+        ? t("error.notFound")
+        : error.statusText || t("error.unexpected");
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;
     stack = error.stack;

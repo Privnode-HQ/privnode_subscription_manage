@@ -1,6 +1,7 @@
 import { Form, useActionData, useLoaderData } from "react-router";
 import type { Route } from "./+types/admin.plans";
 import { makePlanId } from "../../lib/id";
+import { formatError, useI18n } from "../../lib/i18n";
 import { requireAdmin } from "../../lib/server/auth/session.server";
 import { withPlatformTx } from "../../lib/server/db.server";
 import { listAllPlans } from "../../lib/server/models/plans.server";
@@ -64,29 +65,28 @@ export async function action({ request }: Route.ActionArgs) {
 export default function AdminPlans() {
   const { plans } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const { t } = useI18n();
 
   return (
     <div className="space-y-6">
       <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-6">
-        <h1 className="text-lg font-semibold">Admin: Plans</h1>
-        <p className="mt-2 text-sm text-zinc-400">
-          `pln_` is platform-generated. Stripe IDs are stored separately.
-        </p>
+        <h1 className="text-lg font-semibold">{t("adminPlans.title")}</h1>
+        <p className="mt-2 text-sm text-zinc-400">{t("adminPlans.blurb")}</p>
       </div>
 
       <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-6">
-        <div className="text-sm font-semibold">Create Plan</div>
+        <div className="text-sm font-semibold">{t("adminPlans.createTitle")}</div>
         <Form method="post" className="mt-4 grid gap-3">
           <input
             className="rounded border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm"
             name="name"
-            placeholder="Plan name"
+            placeholder={t("adminPlans.namePlaceholder")}
             required
           />
           <textarea
             className="rounded border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm"
             name="description"
-            placeholder="Description"
+            placeholder={t("adminPlans.descPlaceholder")}
             rows={3}
           />
           <div className="grid grid-cols-2 gap-3">
@@ -96,7 +96,7 @@ export default function AdminPlans() {
               type="number"
               min={0}
               step={1}
-              placeholder="5h units"
+              placeholder={t("adminPlans.limit5hPlaceholder")}
               required
             />
             <input
@@ -105,7 +105,7 @@ export default function AdminPlans() {
               type="number"
               min={0}
               step={1}
-              placeholder="7d units"
+              placeholder={t("adminPlans.limit7dPlaceholder")}
               required
             />
           </div>
@@ -125,38 +125,40 @@ export default function AdminPlans() {
           </div>
           <label className="flex items-center gap-2 text-sm text-zinc-300">
             <input name="is_active" type="checkbox" value="true" defaultChecked />
-            Active
+            {t("adminPlans.active")}
           </label>
           <button
             className="rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm hover:bg-zinc-800"
             type="submit"
           >
-            Create
+            {t("adminPlans.create")}
           </button>
         </Form>
         {actionData ? (
           <div className="mt-3 text-sm">
             {actionData.ok ? (
-              <span className="text-emerald-300">Created {actionData.planId}</span>
+              <span className="text-emerald-300">
+                {t("adminPlans.created", { planId: actionData.planId })}
+              </span>
             ) : (
-              <span className="text-red-300">{actionData.error}</span>
+              <span className="text-red-300">{formatError(t, actionData.error)}</span>
             )}
           </div>
         ) : null}
       </div>
 
       <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-6">
-        <div className="text-sm font-semibold">Existing Plans</div>
+        <div className="text-sm font-semibold">{t("adminPlans.existing")}</div>
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="text-xs uppercase tracking-wide text-zinc-500">
               <tr>
-                <th className="py-2 pr-4">plan_id</th>
-                <th className="py-2 pr-4">name</th>
-                <th className="py-2 pr-4">5h</th>
-                <th className="py-2 pr-4">7d</th>
-                <th className="py-2 pr-4">stripe_price_id</th>
-                <th className="py-2 pr-4">active</th>
+                <th className="py-2 pr-4">{t("adminPlans.headers.planId")}</th>
+                <th className="py-2 pr-4">{t("adminPlans.headers.name")}</th>
+                <th className="py-2 pr-4">{t("adminPlans.headers.limit5h")}</th>
+                <th className="py-2 pr-4">{t("adminPlans.headers.limit7d")}</th>
+                <th className="py-2 pr-4">{t("adminPlans.headers.stripePriceId")}</th>
+                <th className="py-2 pr-4">{t("adminPlans.headers.active")}</th>
               </tr>
             </thead>
             <tbody className="text-zinc-200">
@@ -167,7 +169,9 @@ export default function AdminPlans() {
                   <td className="py-2 pr-4">{p.limit_5h_units}</td>
                   <td className="py-2 pr-4">{p.limit_7d_units}</td>
                   <td className="py-2 pr-4 font-mono text-xs">{p.stripe_price_id}</td>
-                  <td className="py-2 pr-4">{p.is_active ? "yes" : "no"}</td>
+                  <td className="py-2 pr-4">
+                    {p.is_active ? t("common.yes") : t("common.no")}
+                  </td>
                 </tr>
               ))}
             </tbody>

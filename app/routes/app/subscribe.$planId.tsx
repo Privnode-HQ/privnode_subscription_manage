@@ -1,13 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Form,
-  Link,
-  useActionData,
-  useLoaderData,
-  useNavigation,
-} from "react-router";
+import { Form, Link, useActionData, useLoaderData, useNavigation } from "react-router";
 import type { Route } from "./+types/subscribe.$planId";
 import type { PlanId } from "../../lib/id";
+import { formatError, useI18n } from "../../lib/i18n";
 import { requireUser } from "../../lib/server/auth/session.server";
 import { env } from "../../lib/server/env.server";
 import { getPlanById } from "../../lib/server/models/plans.server";
@@ -85,6 +80,7 @@ function PaymentElementBlock(props: {
   clientSecret: string;
   returnUrl: string;
 }) {
+  const { t } = useI18n();
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -139,7 +135,7 @@ function PaymentElementBlock(props: {
         confirmParams: { return_url: props.returnUrl },
         redirect: "if_required",
       });
-      if (result.error) setError(result.error.message ?? "Payment failed");
+      if (result.error) setError(result.error.message ?? t("payment.failed"));
       else window.location.href = props.returnUrl;
     } catch (e: any) {
       setError(e?.message ?? String(e));
@@ -150,7 +146,7 @@ function PaymentElementBlock(props: {
 
   return (
     <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-6">
-      <div className="text-sm font-semibold">Payment</div>
+      <div className="text-sm font-semibold">{t("payment.title")}</div>
       <div className="mt-4">
         <div ref={mountRef} />
       </div>
@@ -161,7 +157,7 @@ function PaymentElementBlock(props: {
         onClick={onConfirm}
         className="mt-4 rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm hover:bg-zinc-800 disabled:opacity-50"
       >
-        {submitting ? "Confirming…" : "Confirm payment"}
+        {submitting ? t("payment.confirming") : t("payment.confirm")}
       </button>
     </div>
   );
@@ -171,6 +167,7 @@ export default function SubscribePlan() {
   const { plan, stripePublishableKey, appBaseUrl } = useLoaderData<typeof loader>();
   const actionData = useActionData<ActionData>();
   const nav = useNavigation();
+  const { t } = useI18n();
 
   const returnUrl = useMemo(() => {
     const u = new URL(appBaseUrl);
@@ -182,10 +179,13 @@ export default function SubscribePlan() {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-6">
-        <div className="text-xs uppercase tracking-wide text-zinc-500">Subscribe</div>
+        <div className="text-xs uppercase tracking-wide text-zinc-500">{t("subscribe.title")}</div>
         <h1 className="mt-2 text-lg font-semibold">{plan.name}</h1>
         <div className="mt-2 text-sm text-zinc-400">
-          5h: {plan.limit_5h_units} units · 7d: {plan.limit_7d_units} units
+          {t("subscribe.summary", {
+            limit5h: plan.limit_5h_units,
+            limit7d: plan.limit_7d_units,
+          })}
         </div>
         <div className="mt-4 flex items-center gap-3">
           <Form method="post">
@@ -194,15 +194,15 @@ export default function SubscribePlan() {
               className="rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm hover:bg-zinc-800 disabled:opacity-50"
               disabled={nav.state !== "idle"}
             >
-              {nav.state === "submitting" ? "Creating…" : "Create subscription"}
+              {nav.state === "submitting" ? t("subscribe.creating") : t("subscribe.createSubscription")}
             </button>
           </Form>
           <Link className="text-sm text-zinc-400 hover:text-zinc-200" to="/app/plans">
-            Back to plans
+            {t("subscribe.backToPlans")}
           </Link>
         </div>
         {actionData && !actionData.ok ? (
-          <div className="mt-3 text-sm text-red-300">{actionData.error}</div>
+          <div className="mt-3 text-sm text-red-300">{formatError(t, actionData.error)}</div>
         ) : null}
       </div>
 

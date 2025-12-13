@@ -1,12 +1,10 @@
 import { Form, useActionData, useLoaderData } from "react-router";
 import type { Route } from "./+types/admin.redemption-codes";
 import { isPlanId, type PlanId } from "../../lib/id";
+import { formatError, useI18n } from "../../lib/i18n";
 import { requireAdmin } from "../../lib/server/auth/session.server";
 import { listAllPlans } from "../../lib/server/models/plans.server";
-import {
-  createRedemptionCode,
-  listRedemptionCodes,
-} from "../../lib/server/redemption-codes.server";
+import { createRedemptionCode, listRedemptionCodes } from "../../lib/server/redemption-codes.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await requireAdmin(request);
@@ -76,22 +74,21 @@ function fmtIso(ts: string): string {
 export default function AdminRedemptionCodes() {
   const { plans, codes } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const { t } = useI18n();
 
   return (
     <div className="space-y-6">
       <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-6">
-        <h1 className="text-lg font-semibold">Admin: Redemption Codes</h1>
-        <p className="mt-2 text-sm text-zinc-400">
-          Generates JWT兑换码. Users can redeem them to create a manual subscription.
-        </p>
+        <h1 className="text-lg font-semibold">{t("adminRedemption.title")}</h1>
+        <p className="mt-2 text-sm text-zinc-400">{t("adminRedemption.blurb")}</p>
       </div>
 
       <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-6">
-        <div className="text-sm font-semibold">Generate</div>
+        <div className="text-sm font-semibold">{t("adminRedemption.generate")}</div>
 
         <Form method="post" className="mt-4 grid gap-3">
           <label className="grid gap-1 text-sm text-zinc-300">
-            <span className="text-xs text-zinc-500">Plan</span>
+            <span className="text-xs text-zinc-500">{t("adminRedemption.plan")}</span>
             <select
               name="plan_id"
               className="rounded border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm"
@@ -107,7 +104,7 @@ export default function AdminRedemptionCodes() {
 
           <div className="grid grid-cols-3 gap-3">
             <label className="grid gap-1 text-sm text-zinc-300">
-              <span className="text-xs text-zinc-500">Duration (days)</span>
+              <span className="text-xs text-zinc-500">{t("adminRedemption.durationDays")}</span>
               <input
                 className="rounded border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm"
                 name="duration_days"
@@ -119,7 +116,7 @@ export default function AdminRedemptionCodes() {
               />
             </label>
             <label className="grid gap-1 text-sm text-zinc-300">
-              <span className="text-xs text-zinc-500">Max uses</span>
+              <span className="text-xs text-zinc-500">{t("adminRedemption.maxUses")}</span>
               <input
                 className="rounded border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm"
                 name="max_uses"
@@ -131,7 +128,7 @@ export default function AdminRedemptionCodes() {
               />
             </label>
             <label className="grid gap-1 text-sm text-zinc-300">
-              <span className="text-xs text-zinc-500">Expires in (days)</span>
+              <span className="text-xs text-zinc-500">{t("adminRedemption.expiresInDays")}</span>
               <input
                 className="rounded border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm"
                 name="expires_in_days"
@@ -151,7 +148,7 @@ export default function AdminRedemptionCodes() {
               type="number"
               min={0}
               step={1}
-              placeholder="Override 5h units (optional)"
+              placeholder={t("adminRedemption.override5h")}
             />
             <input
               className="rounded border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm"
@@ -159,19 +156,19 @@ export default function AdminRedemptionCodes() {
               type="number"
               min={0}
               step={1}
-              placeholder="Override 7d units (optional)"
+              placeholder={t("adminRedemption.override7d")}
             />
           </div>
 
           <input
             className="rounded border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm"
             name="custom_plan_name"
-            placeholder="Override plan name (optional)"
+            placeholder={t("adminRedemption.overridePlanName")}
           />
           <textarea
             className="rounded border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm"
             name="custom_plan_description"
-            placeholder="Override description (optional)"
+            placeholder={t("adminRedemption.overrideDesc")}
             rows={3}
           />
 
@@ -179,7 +176,7 @@ export default function AdminRedemptionCodes() {
             className="rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm hover:bg-zinc-800"
             type="submit"
           >
-            Generate
+            {t("adminRedemption.generate")}
           </button>
         </Form>
 
@@ -187,33 +184,35 @@ export default function AdminRedemptionCodes() {
           <div className="mt-4 text-sm">
             {actionData.ok ? (
               <div className="space-y-2">
-                <div className="text-emerald-300">Generated: {actionData.jti}</div>
+                <div className="text-emerald-300">
+                  {t("adminRedemption.generated", { jti: actionData.jti })}
+                </div>
                 <textarea
                   readOnly
                   className="h-28 w-full rounded border border-zinc-800 bg-zinc-900 px-3 py-2 font-mono text-xs"
                   value={actionData.token}
                 />
-                <div className="text-xs text-zinc-500">Share this JWT to the user to redeem.</div>
+                <div className="text-xs text-zinc-500">{t("adminRedemption.shareHint")}</div>
               </div>
             ) : (
-              <span className="text-red-300">{actionData.error}</span>
+              <span className="text-red-300">{formatError(t, actionData.error)}</span>
             )}
           </div>
         ) : null}
       </div>
 
       <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-6">
-        <div className="text-sm font-semibold">Recent Codes</div>
+        <div className="text-sm font-semibold">{t("adminRedemption.recent")}</div>
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="text-xs uppercase tracking-wide text-zinc-500">
               <tr>
-                <th className="py-2 pr-4">jti</th>
-                <th className="py-2 pr-4">plan</th>
-                <th className="py-2 pr-4">duration</th>
-                <th className="py-2 pr-4">uses</th>
-                <th className="py-2 pr-4">expires</th>
-                <th className="py-2 pr-4">custom</th>
+                <th className="py-2 pr-4">{t("adminRedemption.headers.jti")}</th>
+                <th className="py-2 pr-4">{t("adminRedemption.headers.plan")}</th>
+                <th className="py-2 pr-4">{t("adminRedemption.headers.duration")}</th>
+                <th className="py-2 pr-4">{t("adminRedemption.headers.uses")}</th>
+                <th className="py-2 pr-4">{t("adminRedemption.headers.expires")}</th>
+                <th className="py-2 pr-4">{t("adminRedemption.headers.custom")}</th>
               </tr>
             </thead>
             <tbody className="text-zinc-200">
@@ -230,9 +229,11 @@ export default function AdminRedemptionCodes() {
                   </td>
                   <td className="py-2 pr-4 font-mono text-xs">{fmtIso(c.expires_at)}</td>
                   <td className="py-2 pr-4 text-xs text-zinc-400">
-                    {c.custom_plan_name || c.custom_plan_description || c.custom_limit_5h_units != null ||
+                    {c.custom_plan_name ||
+                    c.custom_plan_description ||
+                    c.custom_limit_5h_units != null ||
                     c.custom_limit_7d_units != null
-                      ? "yes"
+                      ? t("common.yes")
                       : "-"}
                   </td>
                 </tr>
@@ -244,4 +245,3 @@ export default function AdminRedemptionCodes() {
     </div>
   );
 }
-

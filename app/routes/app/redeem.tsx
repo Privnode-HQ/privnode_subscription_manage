@@ -1,5 +1,6 @@
 import { Form, Link, useActionData } from "react-router";
 import type { Route } from "./+types/redeem";
+import { formatError, useI18n } from "../../lib/i18n";
 import { requireUser } from "../../lib/server/auth/session.server";
 import { redeemRedemptionCode } from "../../lib/server/redemption-codes.server";
 
@@ -25,12 +26,13 @@ export async function action({ request }: Route.ActionArgs): Promise<ActionResul
 
 export default function Redeem() {
   const actionData = useActionData<ActionResult>();
+  const { t } = useI18n();
 
   return (
     <div className="space-y-6">
       <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-6">
-        <h1 className="text-lg font-semibold">Redeem Code</h1>
-        <p className="mt-2 text-sm text-zinc-400">Paste the JWT兑换码 to redeem a subscription.</p>
+        <h1 className="text-lg font-semibold">{t("redeem.title")}</h1>
+        <p className="mt-2 text-sm text-zinc-400">{t("redeem.blurb")}</p>
       </div>
 
       <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-6">
@@ -38,14 +40,14 @@ export default function Redeem() {
           <textarea
             className="h-32 w-full rounded border border-zinc-800 bg-zinc-900 px-3 py-2 font-mono text-xs"
             name="token"
-            placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            placeholder={t("redeem.placeholder")}
             required
           />
           <button
             className="rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm hover:bg-zinc-800"
             type="submit"
           >
-            Redeem
+            {t("redeem.button")}
           </button>
         </Form>
 
@@ -54,14 +56,17 @@ export default function Redeem() {
             {actionData.ok ? (
               <div className="space-y-2">
                 <div className="text-emerald-300">
-                  {actionData.alreadyRedeemed ? "Already redeemed" : "Redeemed"}: {actionData.subscriptionId}
+                  {actionData.alreadyRedeemed
+                    ? t("redeem.alreadyRedeemed")
+                    : t("redeem.redeemed")}
+                  : {actionData.subscriptionId}
                 </div>
                 <Link className="text-sm text-zinc-300 underline" to="/app/subscriptions">
-                  Go to Subscriptions
+                  {t("redeem.goSubscriptions")}
                 </Link>
               </div>
             ) : (
-              <span className="text-red-300">{actionData.error}</span>
+              <span className="text-red-300">{formatError(t, actionData.error)}</span>
             )}
           </div>
         ) : null}
@@ -69,4 +74,3 @@ export default function Redeem() {
     </div>
   );
 }
-

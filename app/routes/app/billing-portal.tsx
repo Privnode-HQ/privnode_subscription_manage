@@ -1,9 +1,10 @@
 import { Form, useLoaderData } from "react-router";
 import type { Route } from "./+types/billing-portal";
+import { useI18n } from "../../lib/i18n";
 import { requireUser } from "../../lib/server/auth/session.server";
 import { getUserStripeCustomerId } from "../../lib/server/models/users.server";
-import { getStripe } from "../../lib/server/stripe.server";
 import { env } from "../../lib/server/env.server";
+import { getStripe } from "../../lib/server/stripe.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUser(request);
@@ -36,15 +37,13 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function BillingPortal() {
   const { stripeCustomerId } = useLoaderData<typeof loader>();
+  const { t } = useI18n();
 
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-6">
-        <h1 className="text-lg font-semibold">Stripe Billing Portal</h1>
-        <p className="mt-2 text-sm text-zinc-400">
-          Manage payment method, invoices, cancel/resume auto-renew (Stripe-side only). The
-          subscription station syncs status via webhook.
-        </p>
+        <h1 className="text-lg font-semibold">{t("billing.title")}</h1>
+        <p className="mt-2 text-sm text-zinc-400">{t("billing.blurb")}</p>
       </div>
 
       <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-6">
@@ -54,13 +53,11 @@ export default function BillingPortal() {
               type="submit"
               className="rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm hover:bg-zinc-800"
             >
-              Open Billing Portal
+              {t("billing.open")}
             </button>
           </Form>
         ) : (
-          <div className="text-sm text-zinc-400">
-            No Stripe customer yet. Purchase a plan first.
-          </div>
+          <div className="text-sm text-zinc-400">{t("billing.noCustomer")}</div>
         )}
       </div>
     </div>

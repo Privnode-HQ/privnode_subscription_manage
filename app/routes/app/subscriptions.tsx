@@ -1,26 +1,29 @@
 import { Form, useActionData, useLoaderData } from "react-router";
 import type { Route } from "./+types/subscriptions";
 import type { SubscriptionId } from "../../lib/id";
+import { formatError, useI18n } from "../../lib/i18n";
+import { requireUser } from "../../lib/server/auth/session.server";
+import { listDeploymentsForUser, markDeactivated, markDeployed, markTransferred } from "../../lib/server/models/deployments.server";
+import { listSubscriptionsForUser } from "../../lib/server/models/subscriptions.server";
 import { buildInitialSubscriptionEntry } from "../../lib/server/privnode/subscription-data.server";
 import {
-  deploySubscriptionToPrivnode,
   deactivateSubscriptionOnPrivnode,
-  getSubscriptionDataEntryForUser,
+  deploySubscriptionToPrivnode,
   findPrivnodeUserByIdentifier,
+  getSubscriptionDataEntryForUser,
   transferSubscriptionBetweenPrivnodeUsers,
 } from "../../lib/server/privnode/users.server";
-import { requireUser } from "../../lib/server/auth/session.server";
-import { listSubscriptionsForUser } from "../../lib/server/models/subscriptions.server";
-import {
-  getDeployment,
-  listDeploymentsForUser,
-  markDeactivated,
-  markDeployed,
-  markTransferred,
-} from "../../lib/server/models/deployments.server";
+import { getDeployment } from "../../lib/server/models/deployments.server";
 
 type ActionResult =
-  | { ok: true; message: string }
+  | {
+      ok: true;
+      messageKey:
+        | "subscriptions.msgDeployed"
+        | "subscriptions.msgTransferred"
+        | "subscriptions.msgDeactivated";
+      messageParams?: Record<string, string | number>;
+    }
   | { ok: false; error: string };
 
 function canDeployFromStripe(sub: {
@@ -130,7 +133,11 @@ export async function action({ request }: Route.ActionArgs): Promise<ActionResul
       privnodeUserId: res.privnodeUserId,
       privnodeUsername: res.privnodeUsername,
     });
-    return { ok: true, message: `Deployed to ${res.privnodeUsername} (${res.privnodeUserId})` };
+    return {
+      ok: true,
+      messageKey: "subscriptions.msgDeployed",
+      messageParams: { username: res.privnodeUsername, userId: res.privnodeUserId },
+    };
   }
 
   if (intent === "deactivate") {
@@ -141,7 +148,7 @@ export async function action({ request }: Route.ActionArgs): Promise<ActionResul
     });
     if (!res.ok) return { ok: false, error: res.error };
     await markDeactivated({ subscriptionId: sub.subscription_id });
-    return { ok: true, message: "Deactivated (quota preserved)" };
+    return { ok: true, messageKey: "subscriptions.msgDeactivated" };
   }
 
   if (intent === "transfer") {
@@ -165,7 +172,11 @@ export async function action({ request }: Route.ActionArgs): Promise<ActionResul
       toPrivnodeUserId: res.toPrivnodeUserId,
       toPrivnodeUsername: res.toPrivnodeUsername,
     });
-    return { ok: true, message: `Transferred to ${res.toPrivnodeUsername} (${res.toPrivnodeUserId})` };
+    return {
+      ok: true,
+      messageKey: "subscriptions.msgTransferred",
+      messageParams: { username: res.toPrivnodeUsername, userId: res.toPrivnodeUserId },
+    };
   }
 
   return { ok: false, error: "unknown_intent" };
@@ -180,20 +191,21 @@ function fmtEpoch(sec: number | null): string {
 export default function Subscriptions() {
   const { subscriptions } = useLoaderData<typeof loader>();
   const actionData = useActionData<ActionResult>();
+  const { t } = useI18n();
 
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-6">
-        <h1 className="text-lg font-semibold">Subscriptions</h1>
-        <p className="mt-2 text-sm text-zinc-400">
-          Deploy/cancel/transfer updates Privnode `users.subscription_data`. Billing Portal changes only Stripe.
-        </p>
+        <h1 className="text-lg font-semibold">{t("subscriptions.title")}</h1>
+        <p className="mt-2 text-sm text-zinc-400">{t("subscriptions.blurb")}</p>
         {actionData ? (
           <div className="mt-3 text-sm">
             {actionData.ok ? (
-              <span className="text-emerald-300">{actionData.message}</span>
+              <span className="text-emerald-300">
+                {t(actionData.messageKey, actionData.messageParams)}
+              </span>
             ) : (
-              <span className="text-red-300">{actionData.error}</span>
+              <span className="text-red-300">{formatError(t, actionData.error)}</span>
             )}
           </div>
         ) : null}
@@ -203,16 +215,16 @@ export default function Subscriptions() {
         <table className="min-w-full text-left text-sm">
           <thead className="text-xs uppercase tracking-wide text-zinc-500">
             <tr>
-              <th className="px-4 py-3">subscription_id</th>
-              <th className="px-4 py-3">plan</th>
-              <th className="px-4 py-3">stripe_status</th>
-              <th className="px-4 py-3">auto_renew</th>
-              <th className="px-4 py-3">period_end</th>
-              <th className="px-4 py-3">deploy_status</th>
-              <th className="px-4 py-3">privnode_target</th>
-              <th className="px-4 py-3">5h_available</th>
-              <th className="px-4 py-3">7d_available</th>
-              <th className="px-4 py-3">actions</th>
+              <th className="px-4 py-3">{t("subscriptions.headers.subscriptionId")}</th>
+              <th className="px-4 py-3">{t("subscriptions.headers.plan")}</th>
+              <th className="px-4 py-3">{t("subscriptions.headers.stripeStatus")}</th>
+              <th className="px-4 py-3">{t("subscriptions.headers.autoRenew")}</th>
+              <th className="px-4 py-3">{t("subscriptions.headers.periodEnd")}</th>
+              <th className="px-4 py-3">{t("subscriptions.headers.deployStatus")}</th>
+              <th className="px-4 py-3">{t("subscriptions.headers.privnodeTarget")}</th>
+              <th className="px-4 py-3">{t("subscriptions.headers.limit5hAvail")}</th>
+              <th className="px-4 py-3">{t("subscriptions.headers.limit7dAvail")}</th>
+              <th className="px-4 py-3">{t("subscriptions.headers.actions")}</th>
             </tr>
           </thead>
           <tbody className="text-zinc-200">
@@ -224,7 +236,9 @@ export default function Subscriptions() {
                   <div className="mt-1 font-mono text-xs text-zinc-500">{s.plan_id}</div>
                 </td>
                 <td className="px-4 py-3 font-mono text-xs">{s.stripe_status ?? "-"}</td>
-                <td className="px-4 py-3">{s.auto_renew_enabled ? "yes" : "no"}</td>
+                <td className="px-4 py-3">
+                  {s.auto_renew_enabled ? t("common.yes") : t("common.no")}
+                </td>
                 <td className="px-4 py-3 font-mono text-xs">{fmtEpoch(s.current_period_end)}</td>
                 <td className="px-4 py-3">{s.deployment?.status ?? "-"}</td>
                 <td className="px-4 py-3">
@@ -249,16 +263,16 @@ export default function Subscriptions() {
                       <input type="hidden" name="subscription_id" value={s.subscription_id} />
                       <input
                         name="privnode_identifier"
-                        placeholder="Privnode id or username"
+                        placeholder={t("subscriptions.deployPlaceholder")}
                         className="w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs"
                       />
                       <button
                         className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs hover:bg-zinc-800 disabled:opacity-50"
                         type="submit"
                         disabled={!s.canDeploy}
-                        title={s.canDeploy ? "" : "Wait until Stripe subscription is active"}
+                        title={s.canDeploy ? "" : t("subscriptions.waitStripeActive")}
                       >
-                        Deploy
+                        {t("subscriptions.deploy")}
                       </button>
                     </Form>
 
@@ -267,14 +281,14 @@ export default function Subscriptions() {
                       <input type="hidden" name="subscription_id" value={s.subscription_id} />
                       <input
                         name="privnode_identifier"
-                        placeholder="Transfer to id/username"
+                        placeholder={t("subscriptions.transferPlaceholder")}
                         className="w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs"
                       />
                       <button
                         className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs hover:bg-zinc-800"
                         type="submit"
                       >
-                        Transfer
+                        {t("subscriptions.transfer")}
                       </button>
                     </Form>
 
@@ -285,7 +299,7 @@ export default function Subscriptions() {
                         className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs hover:bg-zinc-800"
                         type="submit"
                       >
-                        Deactivate
+                        {t("subscriptions.deactivate")}
                       </button>
                     </Form>
                   </div>
@@ -296,7 +310,7 @@ export default function Subscriptions() {
             {subscriptions.length === 0 ? (
               <tr>
                 <td className="px-4 py-6 text-sm text-zinc-400" colSpan={10}>
-                  No subscriptions yet.
+                  {t("subscriptions.none")}
                 </td>
               </tr>
             ) : null}
