@@ -8,7 +8,8 @@
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
     "db:migrate": "node --env-file=.env ./scripts/migrate.mjs",
-    "selfcheck": "node --experimental-transform-types ./scripts/selfcheck.ts"
+    "selfcheck": "node --experimental-transform-types ./scripts/selfcheck.ts",
+    "expire-subscriptions": "node --env-file=.env --experimental-transform-types ./scripts/expire-subscriptions.ts"
   },
   "dependencies": {
     "@react-router/node": "7.10.1",
