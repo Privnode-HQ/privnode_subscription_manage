@@ -15,7 +15,10 @@ This app uses **two completely independent relational databases**:
 - `PLATFORM_DATABASE_URL`
   - Postgres connection string, e.g. `postgres://user:pass@localhost:5432/substation`
 - `PRIVNODE_DATABASE_URL`
-  - Postgres connection string to Privnode DB, e.g. `postgres://user:pass@localhost:5432/privnode`
+  - Connection string to Privnode DB.
+  - Supported protocols:
+    - Postgres: `postgres://user:pass@localhost:5432/privnode`
+    - MySQL / MariaDB: `mysql://user:pass@localhost:3306/privnode`
 
 ## Stripe
 

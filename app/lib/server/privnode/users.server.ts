@@ -1,5 +1,5 @@
 import type { SubscriptionId } from "../../id";
-import { withPrivnodeTx } from "../db.server";
+import { getPrivnodeDialect, withPrivnodeTx, type PrivnodeDialect } from "../db.server";
 import {
   deactivateEntryWithoutReset,
   findEntryIndex,
@@ -16,21 +16,36 @@ export type PrivnodeUserRow = {
   subscription_data: any;
 };
 
+function p(dialect: PrivnodeDialect, idx: number): string {
+  return dialect === "mysql" ? "?" : `$${idx}`;
+}
+
+function ident(dialect: PrivnodeDialect, name: string): string {
+  return dialect === "mysql" ? `\`${name}\`` : `"${name}"`;
+}
+
 export async function findPrivnodeUserByIdentifier(
   identifier: string
 ): Promise<PrivnodeUserRow | null> {
   const raw = identifier.trim();
   if (!raw) return null;
   return withPrivnodeTx(async (tx) => {
+    const dialect = getPrivnodeDialect();
     let res;
     if (/^\d+$/.test(raw)) {
       res = await tx.query(
-        'SELECT id, username, "group" as group, subscription_data FROM users WHERE id = $1 LIMIT 1',
+        `SELECT id, username, ${ident(dialect, "group")} as ${ident(
+          dialect,
+          "group"
+        )}, subscription_data FROM users WHERE id = ${p(dialect, 1)} LIMIT 1`,
         [Number(raw)]
       );
     } else {
       res = await tx.query(
-        'SELECT id, username, "group" as group, subscription_data FROM users WHERE username = $1 LIMIT 1',
+        `SELECT id, username, ${ident(dialect, "group")} as ${ident(
+          dialect,
+          "group"
+        )}, subscription_data FROM users WHERE username = ${p(dialect, 1)} LIMIT 1`,
         [raw]
       );
     }
@@ -43,8 +58,9 @@ export async function getSubscriptionDataEntryForUser(params: {
   subscriptionId: SubscriptionId;
 }): Promise<SubscriptionDataEntry | null> {
   return withPrivnodeTx(async (tx) => {
+    const dialect = getPrivnodeDialect();
     const res = await tx.query(
-      'SELECT subscription_data FROM users WHERE id = $1 LIMIT 1',
+      `SELECT subscription_data FROM users WHERE id = ${p(dialect, 1)} LIMIT 1`,
       [params.privnodeUserId]
     );
     if (res.rowCount === 0) return null;
@@ -63,7 +79,8 @@ export async function deploySubscriptionToPrivnode(params: {
   autoRenewEnabled: boolean;
 }): Promise<{ privnodeUserId: number; privnodeUsername: string } | { error: string }> {
   return withPrivnodeTx(async (tx) => {
-    const user = await findPrivnodeUserRowForUpdate(tx, params.identifier);
+    const dialect = getPrivnodeDialect();
+    const user = await findPrivnodeUserRowForUpdate(tx, dialect, params.identifier);
     if (!user) return { error: "privnode_user_not_found" };
 
     const arr = normalizeSubscriptionData(user.subscription_data);
@@ -87,7 +104,10 @@ export async function deploySubscriptionToPrivnode(params: {
     }
 
     await tx.query(
-      'UPDATE users SET "group" = $1, subscription_data = $2 WHERE id = $3',
+      `UPDATE users SET ${ident(dialect, "group")} = ${p(dialect, 1)}, subscription_data = ${p(
+        dialect,
+        2
+      )} WHERE id = ${p(dialect, 3)}`,
       ["subscription", JSON.stringify(arr), user.id]
     );
 
@@ -100,8 +120,15 @@ export async function deactivateSubscriptionOnPrivnode(params: {
   subscriptionId: SubscriptionId;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   return withPrivnodeTx(async (tx) => {
+    const dialect = getPrivnodeDialect();
     const res = await tx.query(
-      'SELECT id, username, "group" as group, subscription_data FROM users WHERE id = $1 LIMIT 1 FOR UPDATE',
+      `SELECT id, username, ${ident(dialect, "group")} as ${ident(
+        dialect,
+        "group"
+      )}, subscription_data FROM users WHERE id = ${p(
+        dialect,
+        1
+      )} LIMIT 1 FOR UPDATE`,
       [params.privnodeUserId]
     );
     const user = (res.rows[0] as any) as PrivnodeUserRow | undefined;
@@ -111,10 +138,10 @@ export async function deactivateSubscriptionOnPrivnode(params: {
     if (idx === -1) return { ok: false, error: "subscription_not_found" };
 
     arr[idx] = deactivateEntryWithoutReset(arr[idx]);
-    await tx.query('UPDATE users SET subscription_data = $1 WHERE id = $2', [
-      JSON.stringify(arr),
-      user.id,
-    ]);
+    await tx.query(
+      `UPDATE users SET subscription_data = ${p(dialect, 1)} WHERE id = ${p(dialect, 2)}`,
+      [JSON.stringify(arr), user.id]
+    );
     return { ok: true };
   });
 }
@@ -131,14 +158,21 @@ export async function transferSubscriptionBetweenPrivnodeUsers(params: {
   | { ok: false; error: string }
 > {
   return withPrivnodeTx(async (tx) => {
+    const dialect = getPrivnodeDialect();
     const fromRes = await tx.query(
-      'SELECT id, username, "group" as group, subscription_data FROM users WHERE id = $1 LIMIT 1 FOR UPDATE',
+      `SELECT id, username, ${ident(dialect, "group")} as ${ident(
+        dialect,
+        "group"
+      )}, subscription_data FROM users WHERE id = ${p(
+        dialect,
+        1
+      )} LIMIT 1 FOR UPDATE`,
       [params.fromPrivnodeUserId]
     );
     const fromUser = (fromRes.rows[0] as any) as PrivnodeUserRow | undefined;
     if (!fromUser) return { ok: false, error: "from_user_not_found" };
 
-    const toUser = await findPrivnodeUserRowForUpdate(tx, params.toIdentifier);
+    const toUser = await findPrivnodeUserRowForUpdate(tx, dialect, params.toIdentifier);
     if (!toUser) return { ok: false, error: "to_user_not_found" };
 
     const fromArr = normalizeSubscriptionData(fromUser.subscription_data);
@@ -164,15 +198,17 @@ export async function transferSubscriptionBetweenPrivnodeUsers(params: {
 
     toArr.push(transferred);
 
-    await tx.query('UPDATE users SET subscription_data = $1 WHERE id = $2', [
-      JSON.stringify(fromArr),
-      fromUser.id,
-    ]);
-    await tx.query('UPDATE users SET "group" = $1, subscription_data = $2 WHERE id = $3', [
-      "subscription",
-      JSON.stringify(toArr),
-      toUser.id,
-    ]);
+    await tx.query(
+      `UPDATE users SET subscription_data = ${p(dialect, 1)} WHERE id = ${p(dialect, 2)}`,
+      [JSON.stringify(fromArr), fromUser.id]
+    );
+    await tx.query(
+      `UPDATE users SET ${ident(dialect, "group")} = ${p(dialect, 1)}, subscription_data = ${p(
+        dialect,
+        2
+      )} WHERE id = ${p(dialect, 3)}`,
+      ["subscription", JSON.stringify(toArr), toUser.id]
+    );
 
     return { ok: true, toPrivnodeUserId: toUser.id, toPrivnodeUsername: toUser.username };
   });
@@ -180,6 +216,7 @@ export async function transferSubscriptionBetweenPrivnodeUsers(params: {
 
 async function findPrivnodeUserRowForUpdate(
   tx: any,
+  dialect: PrivnodeDialect,
   identifier: string
 ): Promise<PrivnodeUserRow | null> {
   const raw = identifier.trim();
@@ -187,12 +224,24 @@ async function findPrivnodeUserRowForUpdate(
   let res;
   if (/^\d+$/.test(raw)) {
     res = await tx.query(
-      'SELECT id, username, "group" as group, subscription_data FROM users WHERE id = $1 LIMIT 1 FOR UPDATE',
+      `SELECT id, username, ${ident(dialect, "group")} as ${ident(
+        dialect,
+        "group"
+      )}, subscription_data FROM users WHERE id = ${p(
+        dialect,
+        1
+      )} LIMIT 1 FOR UPDATE`,
       [Number(raw)]
     );
   } else {
     res = await tx.query(
-      'SELECT id, username, "group" as group, subscription_data FROM users WHERE username = $1 LIMIT 1 FOR UPDATE',
+      `SELECT id, username, ${ident(dialect, "group")} as ${ident(
+        dialect,
+        "group"
+      )}, subscription_data FROM users WHERE username = ${p(
+        dialect,
+        1
+      )} LIMIT 1 FOR UPDATE`,
       [raw]
     );
   }
