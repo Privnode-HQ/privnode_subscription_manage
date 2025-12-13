@@ -1,4 +1,5 @@
 import { Form, useActionData, useLoaderData } from "react-router";
+import { useState, useMemo } from "react";
 import type { Route } from "./+types/subscriptions";
 import type { SubscriptionId } from "../../lib/id";
 import { formatError, useI18n } from "../../lib/i18n";
@@ -193,6 +194,56 @@ export default function Subscriptions() {
   const actionData = useActionData<ActionResult>();
   const { t } = useI18n();
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterPlan, setFilterPlan] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterAutoRenew, setFilterAutoRenew] = useState("all");
+
+  // Get unique plan names for filter
+  const planNames = useMemo(() => {
+    const plans = new Set(subscriptions.map((s) => s.plan_name));
+    return Array.from(plans).sort();
+  }, [subscriptions]);
+
+  // Get unique deployment statuses for filter
+  const statuses = useMemo(() => {
+    const stats = new Set(
+      subscriptions.map((s) => s.deployment?.status ?? "not_deployed")
+    );
+    return Array.from(stats).sort();
+  }, [subscriptions]);
+
+  // Filter subscriptions
+  const filteredSubscriptions = useMemo(() => {
+    return subscriptions.filter((s) => {
+      // Search filter
+      const search = searchQuery.toLowerCase();
+      if (search) {
+        const matchesId = s.subscription_id.toLowerCase().includes(search);
+        const matchesPlan = s.plan_name.toLowerCase().includes(search);
+        const matchesUser = s.deployment?.privnode_username?.toLowerCase().includes(search);
+        if (!matchesId && !matchesPlan && !matchesUser) return false;
+      }
+
+      // Plan filter
+      if (filterPlan !== "all" && s.plan_name !== filterPlan) return false;
+
+      // Status filter
+      if (filterStatus !== "all") {
+        const status = s.deployment?.status ?? "not_deployed";
+        if (status !== filterStatus) return false;
+      }
+
+      // Auto-renew filter
+      if (filterAutoRenew !== "all") {
+        if (filterAutoRenew === "yes" && !s.auto_renew_enabled) return false;
+        if (filterAutoRenew === "no" && s.auto_renew_enabled) return false;
+      }
+
+      return true;
+    });
+  }, [subscriptions, searchQuery, filterPlan, filterStatus, filterAutoRenew]);
+
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-6">
@@ -211,13 +262,96 @@ export default function Subscriptions() {
         ) : null}
       </div>
 
+      {/* Search and Filter Section */}
+      <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-4 space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Search */}
+          <div>
+            <label className="block text-xs uppercase tracking-wide text-zinc-500 mb-1.5">
+              {t("subscriptions.search")}
+            </label>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t("subscriptions.searchPlaceholder")}
+              className="w-full rounded border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm"
+            />
+          </div>
+
+          {/* Plan Filter */}
+          <div>
+            <label className="block text-xs uppercase tracking-wide text-zinc-500 mb-1.5">
+              {t("subscriptions.headers.plan")}
+            </label>
+            <select
+              value={filterPlan}
+              onChange={(e) => setFilterPlan(e.target.value)}
+              className="w-full rounded border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm"
+            >
+              <option value="all">{t("subscriptions.filterAll")}</option>
+              {planNames.map((plan) => (
+                <option key={plan} value={plan}>
+                  {plan}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Status Filter */}
+          <div>
+            <label className="block text-xs uppercase tracking-wide text-zinc-500 mb-1.5">
+              {t("subscriptions.headers.deployStatus")}
+            </label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full rounded border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm"
+            >
+              <option value="all">{t("subscriptions.filterAll")}</option>
+              {statuses.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Auto-Renew Filter */}
+          <div>
+            <label className="block text-xs uppercase tracking-wide text-zinc-500 mb-1.5">
+              {t("subscriptions.headers.autoRenew")}
+            </label>
+            <select
+              value={filterAutoRenew}
+              onChange={(e) => setFilterAutoRenew(e.target.value)}
+              className="w-full rounded border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm"
+            >
+              <option value="all">{t("subscriptions.filterAll")}</option>
+              <option value="yes">{t("common.yes")}</option>
+              <option value="no">{t("common.no")}</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Results count */}
+        <div className="text-xs text-zinc-500">
+          {t("subscriptions.showing", {
+            count: filteredSubscriptions.length,
+            total: subscriptions.length,
+          })}
+        </div>
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-2">
-        {subscriptions.length === 0 ? (
+        {filteredSubscriptions.length === 0 ? (
           <div className="col-span-full rounded-lg border border-zinc-800 bg-zinc-950/50 p-6 text-center text-sm text-zinc-400">
-            {t("subscriptions.none")}
+            {subscriptions.length === 0
+              ? t("subscriptions.none")
+              : t("subscriptions.noResults")}
           </div>
         ) : (
-          subscriptions.map((s) => (
+          filteredSubscriptions.map((s) => (
             <div
               key={s.subscription_id}
               className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-5 space-y-4"

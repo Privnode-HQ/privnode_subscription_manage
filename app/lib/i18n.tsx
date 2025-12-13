@@ -86,6 +86,11 @@ const translations: Record<Locale, Dict> = {
     "subscriptions.msgDeployed": "Deployed to {{username}} ({{userId}})",
     "subscriptions.msgTransferred": "Transferred to {{username}} ({{userId}})",
     "subscriptions.msgDeactivated": "Deactivated (quota preserved)",
+    "subscriptions.search": "Search",
+    "subscriptions.searchPlaceholder": "Search by ID, plan, or username",
+    "subscriptions.filterAll": "All",
+    "subscriptions.showing": "Showing {{count}} of {{total}} subscriptions",
+    "subscriptions.noResults": "No subscriptions match your filters.",
 
     "redeem.title": "Redeem Code",
     "redeem.blurb": "Paste the JWT redemption code to redeem a subscription.",
@@ -248,6 +253,11 @@ const translations: Record<Locale, Dict> = {
     "subscriptions.msgDeployed": "已部署到 {{username}}（{{userId}}）",
     "subscriptions.msgTransferred": "已转移到 {{username}}（{{userId}}）",
     "subscriptions.msgDeactivated": "已停用（额度保留）",
+    "subscriptions.search": "搜索",
+    "subscriptions.searchPlaceholder": "搜索 ID、套餐或用户名",
+    "subscriptions.filterAll": "全部",
+    "subscriptions.showing": "显示 {{count}} / {{total}} 个订阅",
+    "subscriptions.noResults": "没有符合筛选条件的订阅。",
 
     "redeem.title": "兑换码",
     "redeem.blurb": "粘贴 JWT 兑换码以创建订阅。",
