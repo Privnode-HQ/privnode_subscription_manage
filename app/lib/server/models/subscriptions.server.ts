@@ -10,6 +10,11 @@ export type SubscriptionRow = {
   stripe_status: string | null;
   auto_renew_enabled: boolean;
   current_period_end: number | null;
+  redeemed_code_jti: string | null;
+  custom_plan_name: string | null;
+  custom_plan_description: string | null;
+  custom_limit_5h_units: number | null;
+  custom_limit_7d_units: number | null;
   created_at: string;
 };
 
@@ -70,8 +75,15 @@ export async function listSubscriptionsForUser(
       SELECT
         s.subscription_id, s.buyer_user_id, s.plan_id,
         s.stripe_customer_id, s.stripe_subscription_id, s.stripe_status,
-        s.auto_renew_enabled, s.current_period_end, s.created_at,
-        p.name AS plan_name, p.description AS plan_description, p.limit_5h_units, p.limit_7d_units
+        s.auto_renew_enabled, s.current_period_end,
+        s.redeemed_code_jti,
+        s.custom_plan_name, s.custom_plan_description,
+        s.custom_limit_5h_units, s.custom_limit_7d_units,
+        s.created_at,
+        COALESCE(s.custom_plan_name, p.name) AS plan_name,
+        COALESCE(s.custom_plan_description, p.description) AS plan_description,
+        COALESCE(s.custom_limit_5h_units, p.limit_5h_units) AS limit_5h_units,
+        COALESCE(s.custom_limit_7d_units, p.limit_7d_units) AS limit_7d_units
       FROM subscriptions s
       JOIN plans p ON p.plan_id = s.plan_id
       WHERE s.buyer_user_id = $1
@@ -92,8 +104,15 @@ export async function getSubscriptionForUser(params: {
       SELECT
         s.subscription_id, s.buyer_user_id, s.plan_id,
         s.stripe_customer_id, s.stripe_subscription_id, s.stripe_status,
-        s.auto_renew_enabled, s.current_period_end, s.created_at,
-        p.name AS plan_name, p.description AS plan_description, p.limit_5h_units, p.limit_7d_units
+        s.auto_renew_enabled, s.current_period_end,
+        s.redeemed_code_jti,
+        s.custom_plan_name, s.custom_plan_description,
+        s.custom_limit_5h_units, s.custom_limit_7d_units,
+        s.created_at,
+        COALESCE(s.custom_plan_name, p.name) AS plan_name,
+        COALESCE(s.custom_plan_description, p.description) AS plan_description,
+        COALESCE(s.custom_limit_5h_units, p.limit_5h_units) AS limit_5h_units,
+        COALESCE(s.custom_limit_7d_units, p.limit_7d_units) AS limit_7d_units
       FROM subscriptions s
       JOIN plans p ON p.plan_id = s.plan_id
       WHERE s.buyer_user_id = $1 AND s.subscription_id = $2

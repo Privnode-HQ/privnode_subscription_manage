@@ -25,12 +25,20 @@ type ActionResult =
 
 function canDeployFromStripe(sub: {
   stripe_status: string | null;
+  stripe_subscription_id: string | null;
   current_period_end: number | null;
 }): boolean {
   if (!sub.current_period_end) return false;
   const now = Math.floor(Date.now() / 1000);
   if (sub.current_period_end <= now) return false;
-  return sub.stripe_status === "active" || sub.stripe_status === "trialing";
+
+  // Stripe-backed subscription: deploy only when active.
+  if (sub.stripe_subscription_id) {
+    return sub.stripe_status === "active" || sub.stripe_status === "trialing";
+  }
+
+  // Manual (e.g. redemption code): deploy while unexpired.
+  return true;
 }
 
 export async function loader({ request }: Route.LoaderArgs) {

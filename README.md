@@ -42,7 +42,9 @@ npm run dev
 
 - Sign in: `/login` (Magic Link or OIDC)
 - Admin create plans: `/app/admin/plans`
+- Admin generate redemption codes: `/app/admin/redemption-codes`
 - User subscribe: `/app/plans` -> Subscribe (embedded Stripe Payment Element)
+- User redeem code: `/app/redeem`
 - Manage deploy/transfer/deactivate: `/app/subscriptions`
 - Billing Portal: `/app/billing-portal`
 

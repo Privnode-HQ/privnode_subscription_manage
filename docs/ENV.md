@@ -19,6 +19,9 @@ This app uses **two completely independent relational databases**:
   - Supported protocols:
     - Postgres: `postgres://user:pass@localhost:5432/privnode`
     - MySQL / MariaDB: `mysql://user:pass@localhost:3306/privnode`
+- `REDEMPTION_CODE_JWT_SECRET`
+  - Used to sign/verify JWT兑换码.
+  - Generate a long random string.
 
 ## Stripe
 

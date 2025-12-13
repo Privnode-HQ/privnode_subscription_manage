@@ -34,9 +34,13 @@ export default function AppLayout() {
               <NavLink to="/app">Dashboard</NavLink>
               <NavLink to="/app/plans">Plans</NavLink>
               <NavLink to="/app/subscriptions">Subscriptions</NavLink>
+              <NavLink to="/app/redeem">Redeem</NavLink>
               <NavLink to="/app/billing-portal">Billing Portal</NavLink>
               {user.role === "admin" ? (
-                <NavLink to="/app/admin/plans">Admin: Plans</NavLink>
+                <>
+                  <NavLink to="/app/admin/plans">Admin: Plans</NavLink>
+                  <NavLink to="/app/admin/redemption-codes">Admin: Redeem Codes</NavLink>
+                </>
               ) : null}
             </nav>
           </div>
@@ -61,4 +65,3 @@ export default function AppLayout() {
     </div>
   );
 }
-

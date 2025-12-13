@@ -11,6 +11,7 @@ import {
   redeployEntryWithoutReset,
   transferEntryWithoutReset,
 } from "../app/lib/server/privnode/subscription-data.server.ts";
+import { signJwtHs256, verifyJwtHs256 } from "../app/lib/server/jwt.server.ts";
 
 function main() {
   const planId = makePlanId();
@@ -74,6 +75,46 @@ function main() {
   assert.equal(transferred["7d_limit"].available, entry["7d_limit"].available);
   assert.equal(transferred["5h_limit"].reset_at, entry["5h_limit"].reset_at);
   assert.equal(transferred["7d_limit"].reset_at, entry["7d_limit"].reset_at);
+
+  const secret = "test_secret_please_change";
+  const nowSec2 = 1_700_000_000;
+  const token = signJwtHs256({
+    secret,
+    payload: {
+      iss: "test",
+      aud: "test",
+      jti: "jti_1",
+      iat: nowSec2,
+      nbf: nowSec2,
+      exp: nowSec2 + 60,
+    },
+  });
+  const ok = verifyJwtHs256({
+    token,
+    secret,
+    nowSec: nowSec2,
+    expectedIssuer: "test",
+    expectedAudience: "test",
+  });
+  assert.equal(ok.ok, true);
+
+  const expired = verifyJwtHs256({
+    token,
+    secret,
+    nowSec: nowSec2 + 60,
+    expectedIssuer: "test",
+    expectedAudience: "test",
+  });
+  assert.equal(expired.ok, false);
+
+  const badSig = verifyJwtHs256({
+    token,
+    secret: "wrong",
+    nowSec: nowSec2,
+    expectedIssuer: "test",
+    expectedAudience: "test",
+  });
+  assert.equal(badSig.ok, false);
 
   console.log("selfcheck OK");
 }

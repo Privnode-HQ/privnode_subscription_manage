@@ -61,4 +61,10 @@ export const env = {
   get ADMIN_EMAILS() {
     return optional("ADMIN_EMAILS");
   },
+
+  // JWT secret used to sign/verify redemption codes.
+  // Generate a long random string.
+  get REDEMPTION_CODE_JWT_SECRET() {
+    return required("REDEMPTION_CODE_JWT_SECRET");
+  },
 } as const;
