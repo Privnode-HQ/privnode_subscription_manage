@@ -138,9 +138,17 @@ export async function deactivateSubscriptionOnPrivnode(params: {
     if (idx === -1) return { ok: false, error: "subscription_not_found" };
 
     arr[idx] = deactivateEntryWithoutReset(arr[idx]);
+
+    // Check if there are any remaining deployed subscriptions
+    const hasDeployedSubscriptions = arr.some(entry => entry.status === "deployed");
+    const newGroup = hasDeployedSubscriptions ? user.group : "default";
+
     await tx.query(
-      `UPDATE users SET subscription_data = ${p(dialect, 1)} WHERE id = ${p(dialect, 2)}`,
-      [JSON.stringify(arr), user.id]
+      `UPDATE users SET ${ident(dialect, "group")} = ${p(dialect, 1)}, subscription_data = ${p(
+        dialect,
+        2
+      )} WHERE id = ${p(dialect, 3)}`,
+      [newGroup, JSON.stringify(arr), user.id]
     );
     return { ok: true };
   });
