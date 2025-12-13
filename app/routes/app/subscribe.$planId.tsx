@@ -17,7 +17,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const user = await requireUser(request);
   const planId = params.planId as PlanId;
   const plan = await getPlanById(planId);
-  if (!plan || !plan.is_active) {
+  if (!plan || !plan.is_active || (plan.is_hidden && user.role !== "admin")) {
     return new Response("Plan not found", { status: 404 });
   }
   return {
@@ -32,7 +32,9 @@ export async function action({ request, params }: Route.ActionArgs): Promise<Act
   const user = await requireUser(request);
   const planId = params.planId as PlanId;
   const plan = await getPlanById(planId);
-  if (!plan || !plan.is_active) return { ok: false, error: "plan_not_found" };
+  if (!plan || !plan.is_active || (plan.is_hidden && user.role !== "admin")) {
+    return { ok: false, error: "plan_not_found" };
+  }
 
   const stripeCustomerId = await ensureStripeCustomer({
     userId: user.id,
