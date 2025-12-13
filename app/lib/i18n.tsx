@@ -43,12 +43,12 @@ const translations: Record<Locale, Dict> = {
     "login.continueWith": "Continue with {{provider}}",
 
     "dashboard.title": "Dashboard",
-    "dashboard.blurb": "This system sells and manages subscription bundles. It does not proxy any API traffic.",
+    "dashboard.blurb": "This system sells and manages subscription bundles.",
 
     "plans.title": "Plans",
-    "plans.blurb": "You buy monthly subscription bundles here. Actual quota consumption is enforced by Privnode.",
-    "plans.limit5h": "5h rolling window: {{units}} units",
-    "plans.limit7d": "7d rolling window: {{units}} units",
+    "plans.blurb": "You buy monthly subscription bundles here.",
+    "plans.limit5h": "5h rolling window: ${{units}}",
+    "plans.limit7d": "7d rolling window: ${{units}}",
     "plans.subscribe": "Subscribe",
     "plans.none": "No active plans.",
 
@@ -56,7 +56,7 @@ const translations: Record<Locale, Dict> = {
     "subscribe.createSubscription": "Create subscription",
     "subscribe.creating": "Creating…",
     "subscribe.backToPlans": "Back to plans",
-    "subscribe.summary": "5h: {{limit5h}} units · 7d: {{limit7d}} units",
+    "subscribe.summary": "5h: ${{limit5h}} · 7d: ${{limit7d}}",
 
     "payment.title": "Payment",
     "payment.confirming": "Confirming…",
@@ -65,7 +65,7 @@ const translations: Record<Locale, Dict> = {
 
     "subscriptions.title": "Subscriptions",
     "subscriptions.blurb":
-      "Deploy/cancel/transfer updates Privnode `users.subscription_data`. Billing Portal changes only Stripe.",
+      "Deploy/cancel/transfer updates Privnode subscription. ",
     "subscriptions.headers.subscriptionId": "subscription_id",
     "subscriptions.headers.plan": "plan",
     "subscriptions.headers.stripeStatus": "stripe_status",
@@ -93,7 +93,7 @@ const translations: Record<Locale, Dict> = {
     "subscriptions.noResults": "No subscriptions match your filters.",
 
     "redeem.title": "Redeem Code",
-    "redeem.blurb": "Paste the JWT redemption code to redeem a subscription.",
+    "redeem.blurb": "Paste the redemption code to redeem a subscription.",
     "redeem.placeholder": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "redeem.button": "Redeem",
     "redeem.alreadyRedeemed": "Already redeemed",
@@ -102,7 +102,7 @@ const translations: Record<Locale, Dict> = {
 
     "billing.title": "Stripe Billing Portal",
     "billing.blurb":
-      "Manage payment method, invoices, cancel/resume auto-renew (Stripe-side only). The subscription station syncs status via webhook.",
+      "Manage payment method, invoices, cancel/resume auto-renew.",
     "billing.open": "Open Billing Portal",
     "billing.noCustomer": "No Stripe customer yet. Purchase a plan first.",
 
@@ -111,8 +111,8 @@ const translations: Record<Locale, Dict> = {
     "adminPlans.createTitle": "Create Plan",
     "adminPlans.namePlaceholder": "Plan name",
     "adminPlans.descPlaceholder": "Description",
-    "adminPlans.limit5hPlaceholder": "5h units",
-    "adminPlans.limit7dPlaceholder": "7d units",
+    "adminPlans.limit5hPlaceholder": "5h quota",
+    "adminPlans.limit7dPlaceholder": "7d quota",
     "adminPlans.active": "Active",
     "adminPlans.create": "Create",
     "adminPlans.created": "Created {{planId}}",
@@ -210,12 +210,12 @@ const translations: Record<Locale, Dict> = {
     "login.continueWith": "使用 {{provider}} 继续",
 
     "dashboard.title": "控制台",
-    "dashboard.blurb": "本系统用于售卖与管理订阅套餐，不代理任何 API 流量。",
+    "dashboard.blurb": "本系统用于售卖与管理订阅套餐。",
 
     "plans.title": "套餐",
-    "plans.blurb": "在此购买月度订阅套餐。额度消耗由 Privnode 强制执行。",
-    "plans.limit5h": "5 小时滚动窗口：{{units}} 单位",
-    "plans.limit7d": "7 天滚动窗口：{{units}} 单位",
+    "plans.blurb": "在此购买月度订阅套餐。",
+    "plans.limit5h": "5 小时滚动窗口：${{units}}",
+    "plans.limit7d": "7 天滚动窗口：${{units}}",
     "plans.subscribe": "订阅",
     "plans.none": "暂无可用套餐。",
 
@@ -223,7 +223,7 @@ const translations: Record<Locale, Dict> = {
     "subscribe.createSubscription": "创建订阅",
     "subscribe.creating": "创建中…",
     "subscribe.backToPlans": "返回套餐列表",
-    "subscribe.summary": "5 小时：{{limit5h}} 单位 · 7 天：{{limit7d}} 单位",
+    "subscribe.summary": "5 小时：${{limit5h}} · 7 天：${{limit7d}}",
 
     "payment.title": "支付",
     "payment.confirming": "确认中…",
@@ -232,7 +232,7 @@ const translations: Record<Locale, Dict> = {
 
     "subscriptions.title": "订阅",
     "subscriptions.blurb":
-      "部署/取消/转移会更新 Privnode `users.subscription_data`。账单门户只会修改 Stripe 侧状态。",
+      "部署/取消/转移会更新 Privnode 订阅。",
     "subscriptions.headers.subscriptionId": "订阅 ID",
     "subscriptions.headers.plan": "套餐",
     "subscriptions.headers.stripeStatus": "Stripe 状态",
@@ -260,7 +260,7 @@ const translations: Record<Locale, Dict> = {
     "subscriptions.noResults": "没有符合筛选条件的订阅。",
 
     "redeem.title": "兑换码",
-    "redeem.blurb": "粘贴 JWT 兑换码以创建订阅。",
+    "redeem.blurb": "粘贴兑换码以创建订阅。",
     "redeem.placeholder": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "redeem.button": "兑换",
     "redeem.alreadyRedeemed": "已兑换过",
@@ -269,7 +269,7 @@ const translations: Record<Locale, Dict> = {
 
     "billing.title": "Stripe 账单门户",
     "billing.blurb":
-      "管理支付方式、发票，以及取消/恢复自动续订（仅 Stripe 侧）。订阅站通过 webhook 同步状态。",
+      "管理支付方式、发票，以及取消/恢复自动续订。",
     "billing.open": "打开账单门户",
     "billing.noCustomer": "尚未创建 Stripe 客户。请先购买套餐。",
 
@@ -278,8 +278,8 @@ const translations: Record<Locale, Dict> = {
     "adminPlans.createTitle": "创建套餐",
     "adminPlans.namePlaceholder": "套餐名称",
     "adminPlans.descPlaceholder": "描述",
-    "adminPlans.limit5hPlaceholder": "5 小时单位",
-    "adminPlans.limit7dPlaceholder": "7 天单位",
+    "adminPlans.limit5hPlaceholder": "5 小时额度",
+    "adminPlans.limit7dPlaceholder": "7 天额度",
     "adminPlans.active": "启用",
     "adminPlans.create": "创建",
     "adminPlans.created": "已创建 {{planId}}",

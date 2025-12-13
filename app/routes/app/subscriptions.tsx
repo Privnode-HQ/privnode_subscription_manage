@@ -412,7 +412,7 @@ export default function Subscriptions() {
                     {t("subscriptions.headers.limit5hAvail")}
                   </div>
                   <div className="font-mono text-xs">
-                    {s.privnodeEntry ? s.privnodeEntry["5h_limit"].available : "-"}
+                    {s.privnodeEntry ? `$${(s.privnodeEntry["5h_limit"].available / 500000).toFixed(2)}` : "-"}
                   </div>
                 </div>
                 <div>
@@ -420,7 +420,7 @@ export default function Subscriptions() {
                     {t("subscriptions.headers.limit7dAvail")}
                   </div>
                   <div className="font-mono text-xs">
-                    {s.privnodeEntry ? s.privnodeEntry["7d_limit"].available : "-"}
+                    {s.privnodeEntry ? `$${(s.privnodeEntry["7d_limit"].available / 500000).toFixed(2)}` : "-"}
                   </div>
                 </div>
               </div>
