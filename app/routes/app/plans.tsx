@@ -3,16 +3,49 @@ import type { Route } from "./+types/plans";
 import { useI18n } from "../../lib/i18n";
 import { requireUser } from "../../lib/server/auth/session.server";
 import { listActivePlans } from "../../lib/server/models/plans.server";
+import { getStripe } from "../../lib/server/stripe.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
   await requireUser(request);
   const plans = await listActivePlans();
-  return { plans };
+
+  // Fetch pricing information from Stripe
+  const stripe = getStripe();
+  const plansWithPricing = await Promise.all(
+    plans.map(async (plan) => {
+      try {
+        const price = await stripe.prices.retrieve(plan.stripe_price_id);
+        return {
+          ...plan,
+          price: {
+            amount: price.unit_amount,
+            currency: price.currency,
+            interval: price.recurring?.interval,
+          },
+        };
+      } catch (error) {
+        console.error(`Failed to fetch price for plan ${plan.plan_id}:`, error);
+        return { ...plan, price: null };
+      }
+    })
+  );
+
+  return { plans: plansWithPricing };
 }
 
 export default function Plans() {
   const { plans } = useLoaderData<typeof loader>();
   const { t } = useI18n();
+
+  const formatPrice = (price: { amount: number | null; currency: string; interval?: string } | null) => {
+    if (!price || price.amount === null) return null;
+    const amount = price.amount / 100; // Stripe amounts are in cents
+    const formatted = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: price.currency.toUpperCase(),
+    }).format(amount);
+    return price.interval ? `${formatted}/${price.interval}` : formatted;
+  };
 
   return (
     <div className="space-y-4">
@@ -39,6 +72,11 @@ export default function Plans() {
                   <span className="mx-2 text-zinc-700">|</span>
                   {t("plans.limit7d", { units: p.limit_7d_units })}
                 </div>
+                {p.price && (
+                  <div className="mt-2 text-base font-semibold text-blue-400">
+                    {formatPrice(p.price)}
+                  </div>
+                )}
               </div>
               <div className="flex shrink-0 flex-col items-end gap-2">
                 <Link
