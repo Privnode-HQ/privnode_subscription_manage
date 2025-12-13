@@ -5,13 +5,12 @@ export function subscriptionAutoRenewEnabled(sub: Stripe.Subscription): boolean 
 }
 
 export function subscriptionCurrentPeriodEnd(sub: Stripe.Subscription): number | null {
-  // Stripe's newer API models period end on SubscriptionItem(s).
+  // Stripe's current API models the billing period on SubscriptionItem(s).
   // For multi-item subscriptions, take the earliest period end as the effective expiry.
-  const items = (sub.items?.data ?? []) as any[];
+  const items = sub.items?.data ?? [];
   const ends = items
-    .map((it) => (typeof it.current_period_end === "number" ? it.current_period_end : null))
+    .map((it) => it.current_period_end)
     .filter((x): x is number => typeof x === "number");
   if (ends.length === 0) return null;
   return Math.min(...ends);
 }
-

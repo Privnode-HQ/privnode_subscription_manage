@@ -28,6 +28,7 @@ This app uses **two completely independent relational databases**:
 - `STRIPE_SECRET_KEY`
 - `STRIPE_PUBLISHABLE_KEY`
 - `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_API_VERSION` (optional, recommended)
 - `STRIPE_BILLING_PORTAL_CONFIGURATION_ID` (optional)
 
 ## Magic Link Email (optional in dev)

@@ -7,17 +7,12 @@ import {
   useNavigation,
 } from "react-router";
 import type { Route } from "./+types/subscribe.$planId";
-import { makeSubscriptionId, type PlanId } from "../../lib/id";
+import type { PlanId } from "../../lib/id";
 import { requireUser } from "../../lib/server/auth/session.server";
 import { env } from "../../lib/server/env.server";
-import { getStripe } from "../../lib/server/stripe.server";
-import {
-  subscriptionAutoRenewEnabled,
-  subscriptionCurrentPeriodEnd,
-} from "../../lib/server/stripe-helpers.server";
 import { getPlanById } from "../../lib/server/models/plans.server";
 import { ensureStripeCustomer } from "../../lib/server/models/users.server";
-import { createSubscriptionRecord } from "../../lib/server/models/subscriptions.server";
+import { createOrReuseStripeSubscriptionPayment } from "../../lib/server/stripe/subscriptions.server";
 
 type ActionData =
   | { ok: true; clientSecret: string; subscriptionId: string; stripeSubscriptionId: string }
@@ -49,49 +44,21 @@ export async function action({ request, params }: Route.ActionArgs): Promise<Act
     email: user.email,
   });
 
-  const subscriptionId = makeSubscriptionId();
-  const stripe = getStripe();
-  const stripeSub = await stripe.subscriptions.create({
-    customer: stripeCustomerId,
-    items: [{ price: plan.stripe_price_id }],
-    payment_behavior: "default_incomplete",
-    payment_settings: {
-      save_default_payment_method: "on_subscription",
-    },
-    expand: ["latest_invoice.payment_intent"],
-    metadata: {
-      platform_subscription_id: subscriptionId,
-      platform_plan_id: plan.plan_id,
-    },
-  });
-
-  const latestInvoice: any = stripeSub.latest_invoice;
-  const paymentIntent: any = latestInvoice?.payment_intent;
-  const clientSecret = paymentIntent?.client_secret as string | undefined;
-  if (!clientSecret) {
-    return { ok: false, error: "missing_client_secret" };
+  try {
+    const init = await createOrReuseStripeSubscriptionPayment({
+      buyerUserId: user.id,
+      stripeCustomerId,
+      plan,
+    });
+    return {
+      ok: true,
+      clientSecret: init.clientSecret,
+      subscriptionId: init.subscriptionId,
+      stripeSubscriptionId: init.stripeSubscriptionId,
+    };
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? String(e) };
   }
-
-  const cancelAtPeriodEnd = !subscriptionAutoRenewEnabled(stripeSub);
-  const currentPeriodEnd = subscriptionCurrentPeriodEnd(stripeSub);
-
-  await createSubscriptionRecord({
-    subscriptionId,
-    buyerUserId: user.id,
-    planId: plan.plan_id,
-    stripeCustomerId,
-    stripeSubscriptionId: stripeSub.id,
-    stripeStatus: stripeSub.status,
-    autoRenewEnabled: !cancelAtPeriodEnd,
-    currentPeriodEnd,
-  });
-
-  return {
-    ok: true,
-    clientSecret,
-    subscriptionId,
-    stripeSubscriptionId: stripeSub.id,
-  };
 }
 
 function loadStripeJs(): Promise<any> {

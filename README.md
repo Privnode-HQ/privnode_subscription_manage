@@ -51,4 +51,5 @@ npm run dev
 ## Docs
 
 - `docs/ENV.md`
+- `docs/STRIPE.md`
 - `docs/PRIVNODE_SUBSCRIPTION_DATA.md`

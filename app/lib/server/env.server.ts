@@ -39,6 +39,11 @@ export const env = {
   get STRIPE_WEBHOOK_SECRET() {
     return required("STRIPE_WEBHOOK_SECRET");
   },
+  // Optional. When set, pin Stripe API version for this server integration.
+  // If unset, Stripe SDK defaults to your account's API version.
+  get STRIPE_API_VERSION() {
+    return optional("STRIPE_API_VERSION");
+  },
   get STRIPE_BILLING_PORTAL_CONFIGURATION_ID() {
     return optional("STRIPE_BILLING_PORTAL_CONFIGURATION_ID");
   },

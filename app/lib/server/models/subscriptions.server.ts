@@ -25,6 +25,12 @@ export type SubscriptionWithPlan = SubscriptionRow & {
   limit_7d_units: number;
 };
 
+export type ExistingIncompleteStripeSubscription = {
+  subscription_id: SubscriptionId;
+  stripe_subscription_id: string;
+  stripe_customer_id: string | null;
+};
+
 export async function createSubscriptionRecord(params: {
   subscriptionId: SubscriptionId;
   buyerUserId: number;
@@ -43,6 +49,15 @@ export async function createSubscriptionRecord(params: {
         stripe_customer_id, stripe_subscription_id, stripe_status,
         auto_renew_enabled, current_period_end, ordered_at
       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8, now())
+      ON CONFLICT(subscription_id) DO UPDATE
+      SET buyer_user_id = EXCLUDED.buyer_user_id,
+          plan_id = EXCLUDED.plan_id,
+          stripe_customer_id = EXCLUDED.stripe_customer_id,
+          stripe_subscription_id = EXCLUDED.stripe_subscription_id,
+          stripe_status = EXCLUDED.stripe_status,
+          auto_renew_enabled = EXCLUDED.auto_renew_enabled,
+          current_period_end = EXCLUDED.current_period_end,
+          ordered_at = COALESCE(subscriptions.ordered_at, EXCLUDED.ordered_at)
     `,
     [
       params.subscriptionId,
@@ -64,6 +79,31 @@ export async function createSubscriptionRecord(params: {
     `,
     [params.subscriptionId]
   );
+}
+
+export async function findLatestIncompleteStripeSubscriptionForUserPlan(params: {
+  buyerUserId: number;
+  planId: PlanId;
+}): Promise<ExistingIncompleteStripeSubscription | null> {
+  const pool = getPlatformPool();
+  const res = await pool.query(
+    `
+      SELECT subscription_id, stripe_subscription_id, stripe_customer_id
+      FROM subscriptions
+      WHERE buyer_user_id = $1
+        AND plan_id = $2
+        AND stripe_subscription_id IS NOT NULL
+        AND stripe_status = 'incomplete'
+        AND created_at >= now() - interval '1 day'
+      ORDER BY created_at DESC
+      LIMIT 1
+    `,
+    [params.buyerUserId, params.planId]
+  );
+  const row = res.rows[0] as ExistingIncompleteStripeSubscription | undefined;
+  if (!row) return null;
+  if (!row.stripe_subscription_id) return null;
+  return row;
 }
 
 export async function listSubscriptionsForUser(

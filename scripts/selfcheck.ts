@@ -12,6 +12,10 @@ import {
   transferEntryWithoutReset,
 } from "../app/lib/server/privnode/subscription-data.server.ts";
 import { signJwtHs256, verifyJwtHs256 } from "../app/lib/server/jwt.server.ts";
+import {
+  subscriptionAutoRenewEnabled,
+  subscriptionCurrentPeriodEnd,
+} from "../app/lib/server/stripe-helpers.server.ts";
 
 function main() {
   const planId = makePlanId();
@@ -115,6 +119,18 @@ function main() {
     expectedAudience: "test",
   });
   assert.equal(badSig.ok, false);
+
+  const stripeSub: any = {
+    cancel_at_period_end: false,
+    items: {
+      data: [
+        { current_period_end: endAtSec + 10 },
+        { current_period_end: endAtSec },
+      ],
+    },
+  };
+  assert.equal(subscriptionAutoRenewEnabled(stripeSub), true);
+  assert.equal(subscriptionCurrentPeriodEnd(stripeSub), endAtSec);
 
   console.log("selfcheck OK");
 }
