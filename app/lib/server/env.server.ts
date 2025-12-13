@@ -74,4 +74,12 @@ export const env = {
   get REDEMPTION_CODE_JWT_SECRET() {
     return required("REDEMPTION_CODE_JWT_SECRET");
   },
+
+  // Feature flag: Enable/disable subscription transfer functionality.
+  // Set to "false" or "0" to disable transfer feature.
+  get ENABLE_SUBSCRIPTION_TRANSFER() {
+    const val = optional("ENABLE_SUBSCRIPTION_TRANSFER");
+    if (val === "false" || val === "0") return false;
+    return true;
+  },
 } as const;

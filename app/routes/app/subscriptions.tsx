@@ -4,6 +4,7 @@ import type { Route } from "./+types/subscriptions";
 import type { SubscriptionId } from "../../lib/id";
 import { formatError, useI18n } from "../../lib/i18n";
 import { requireUser } from "../../lib/server/auth/session.server";
+import { env } from "../../lib/server/env.server";
 import { listDeploymentsForUser, markDeactivated, markDeployed, markTransferred } from "../../lib/server/models/deployments.server";
 import { listSubscriptionsForUser } from "../../lib/server/models/subscriptions.server";
 import { buildInitialSubscriptionEntry } from "../../lib/server/privnode/subscription-data.server";
@@ -70,7 +71,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     })
   );
 
-  return { user, subscriptions: enriched };
+  return { user, subscriptions: enriched, transferEnabled: env.ENABLE_SUBSCRIPTION_TRANSFER };
 }
 
 export async function action({ request }: Route.ActionArgs): Promise<ActionResult> {
@@ -153,6 +154,9 @@ export async function action({ request }: Route.ActionArgs): Promise<ActionResul
   }
 
   if (intent === "transfer") {
+    if (!env.ENABLE_SUBSCRIPTION_TRANSFER) {
+      return { ok: false, error: "transfer_disabled" };
+    }
     if (!dep?.privnode_user_id) return { ok: false, error: "not_deployed" };
     if (!canDeployFromStripe(sub)) {
       return { ok: false, error: "not_transferable_until_subscription_active" };
@@ -190,7 +194,7 @@ function fmtEpoch(sec: number | null): string {
 }
 
 export default function Subscriptions() {
-  const { subscriptions } = useLoaderData<typeof loader>();
+  const { subscriptions, transferEnabled } = useLoaderData<typeof loader>();
   const actionData = useActionData<ActionResult>();
   const { t } = useI18n();
 
@@ -449,21 +453,23 @@ export default function Subscriptions() {
                   </button>
                 </Form>
 
-                <Form method="post" className="flex gap-2">
-                  <input type="hidden" name="intent" value="transfer" />
-                  <input type="hidden" name="subscription_id" value={s.subscription_id} />
-                  <input
-                    name="privnode_identifier"
-                    placeholder={t("subscriptions.transferPlaceholder")}
-                    className="flex-1 rounded border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs"
-                  />
-                  <button
-                    className="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs hover:bg-zinc-800"
-                    type="submit"
-                  >
-                    {t("subscriptions.transfer")}
-                  </button>
-                </Form>
+                {transferEnabled && (
+                  <Form method="post" className="flex gap-2">
+                    <input type="hidden" name="intent" value="transfer" />
+                    <input type="hidden" name="subscription_id" value={s.subscription_id} />
+                    <input
+                      name="privnode_identifier"
+                      placeholder={t("subscriptions.transferPlaceholder")}
+                      className="flex-1 rounded border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs"
+                    />
+                    <button
+                      className="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs hover:bg-zinc-800"
+                      type="submit"
+                    >
+                      {t("subscriptions.transfer")}
+                    </button>
+                  </Form>
+                )}
 
                 <Form method="post">
                   <input type="hidden" name="intent" value="deactivate" />
