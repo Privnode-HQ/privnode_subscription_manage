@@ -211,111 +211,140 @@ export default function Subscriptions() {
         ) : null}
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-950/50">
-        <table className="min-w-full text-left text-sm">
-          <thead className="text-xs uppercase tracking-wide text-zinc-500">
-            <tr>
-              <th className="px-4 py-3">{t("subscriptions.headers.subscriptionId")}</th>
-              <th className="px-4 py-3">{t("subscriptions.headers.plan")}</th>
-              <th className="px-4 py-3">{t("subscriptions.headers.stripeStatus")}</th>
-              <th className="px-4 py-3">{t("subscriptions.headers.autoRenew")}</th>
-              <th className="px-4 py-3">{t("subscriptions.headers.periodEnd")}</th>
-              <th className="px-4 py-3">{t("subscriptions.headers.deployStatus")}</th>
-              <th className="px-4 py-3">{t("subscriptions.headers.privnodeTarget")}</th>
-              <th className="px-4 py-3">{t("subscriptions.headers.limit5hAvail")}</th>
-              <th className="px-4 py-3">{t("subscriptions.headers.limit7dAvail")}</th>
-              <th className="px-4 py-3">{t("subscriptions.headers.actions")}</th>
-            </tr>
-          </thead>
-          <tbody className="text-zinc-200">
-            {subscriptions.map((s) => (
-              <tr key={s.subscription_id} className="border-t border-zinc-900 align-top">
-                <td className="px-4 py-3 font-mono text-xs">{s.subscription_id}</td>
-                <td className="px-4 py-3">
-                  <div className="text-sm">{s.plan_name}</div>
-                  <div className="mt-1 font-mono text-xs text-zinc-500">{s.plan_id}</div>
-                </td>
-                <td className="px-4 py-3 font-mono text-xs">{s.stripe_status ?? "-"}</td>
-                <td className="px-4 py-3">
-                  {s.auto_renew_enabled ? t("common.yes") : t("common.no")}
-                </td>
-                <td className="px-4 py-3 font-mono text-xs">{fmtEpoch(s.current_period_end)}</td>
-                <td className="px-4 py-3">{s.deployment?.status ?? "-"}</td>
-                <td className="px-4 py-3">
+      <div className="grid gap-4 lg:grid-cols-2">
+        {subscriptions.length === 0 ? (
+          <div className="col-span-full rounded-lg border border-zinc-800 bg-zinc-950/50 p-6 text-center text-sm text-zinc-400">
+            {t("subscriptions.none")}
+          </div>
+        ) : (
+          subscriptions.map((s) => (
+            <div
+              key={s.subscription_id}
+              className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-5 space-y-4"
+            >
+              {/* Header section */}
+              <div className="space-y-2 border-b border-zinc-800 pb-4">
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-zinc-500">
+                    {t("subscriptions.headers.subscriptionId")}
+                  </div>
+                  <div className="font-mono text-xs text-zinc-300">{s.subscription_id}</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-zinc-500">
+                    {t("subscriptions.headers.plan")}
+                  </div>
+                  <div className="text-sm font-medium">{s.plan_name}</div>
+                  <div className="font-mono text-xs text-zinc-500">{s.plan_id}</div>
+                </div>
+              </div>
+
+              {/* Info grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-zinc-500">
+                    {t("subscriptions.headers.autoRenew")}
+                  </div>
+                  <div className="text-sm">
+                    {s.auto_renew_enabled ? t("common.yes") : t("common.no")}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-zinc-500">
+                    {t("subscriptions.headers.periodEnd")}
+                  </div>
+                  <div className="font-mono text-xs">{fmtEpoch(s.current_period_end)}</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-zinc-500">
+                    {t("subscriptions.headers.deployStatus")}
+                  </div>
+                  <div className="text-sm">{s.deployment?.status ?? "-"}</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-zinc-500">
+                    {t("subscriptions.headers.privnodeTarget")}
+                  </div>
                   {s.deployment?.privnode_user_id ? (
                     <div className="font-mono text-xs">
                       {s.deployment.privnode_username} ({s.deployment.privnode_user_id})
                     </div>
                   ) : (
-                    "-"
+                    <div className="text-sm">-</div>
                   )}
-                </td>
-                <td className="px-4 py-3 font-mono text-xs">
-                  {s.privnodeEntry ? s.privnodeEntry["5h_limit"].available : "-"}
-                </td>
-                <td className="px-4 py-3 font-mono text-xs">
-                  {s.privnodeEntry ? s.privnodeEntry["7d_limit"].available : "-"}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="w-64 space-y-2">
-                    <Form method="post" className="flex gap-2">
-                      <input type="hidden" name="intent" value="deploy" />
-                      <input type="hidden" name="subscription_id" value={s.subscription_id} />
-                      <input
-                        name="privnode_identifier"
-                        placeholder={t("subscriptions.deployPlaceholder")}
-                        className="w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs"
-                      />
-                      <button
-                        className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs hover:bg-zinc-800 disabled:opacity-50"
-                        type="submit"
-                        disabled={!s.canDeploy}
-                        title={s.canDeploy ? "" : t("subscriptions.waitStripeActive")}
-                      >
-                        {t("subscriptions.deploy")}
-                      </button>
-                    </Form>
-
-                    <Form method="post" className="flex gap-2">
-                      <input type="hidden" name="intent" value="transfer" />
-                      <input type="hidden" name="subscription_id" value={s.subscription_id} />
-                      <input
-                        name="privnode_identifier"
-                        placeholder={t("subscriptions.transferPlaceholder")}
-                        className="w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs"
-                      />
-                      <button
-                        className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs hover:bg-zinc-800"
-                        type="submit"
-                      >
-                        {t("subscriptions.transfer")}
-                      </button>
-                    </Form>
-
-                    <Form method="post">
-                      <input type="hidden" name="intent" value="deactivate" />
-                      <input type="hidden" name="subscription_id" value={s.subscription_id} />
-                      <button
-                        className="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs hover:bg-zinc-800"
-                        type="submit"
-                      >
-                        {t("subscriptions.deactivate")}
-                      </button>
-                    </Form>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-zinc-500">
+                    {t("subscriptions.headers.limit5hAvail")}
                   </div>
-                </td>
-              </tr>
-            ))}
+                  <div className="font-mono text-xs">
+                    {s.privnodeEntry ? s.privnodeEntry["5h_limit"].available : "-"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-zinc-500">
+                    {t("subscriptions.headers.limit7dAvail")}
+                  </div>
+                  <div className="font-mono text-xs">
+                    {s.privnodeEntry ? s.privnodeEntry["7d_limit"].available : "-"}
+                  </div>
+                </div>
+              </div>
 
-            {subscriptions.length === 0 ? (
-              <tr>
-                <td className="px-4 py-6 text-sm text-zinc-400" colSpan={10}>
-                  {t("subscriptions.none")}
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
+              {/* Actions section */}
+              <div className="space-y-2 border-t border-zinc-800 pt-4">
+                <div className="text-xs uppercase tracking-wide text-zinc-500 mb-2">
+                  {t("subscriptions.headers.actions")}
+                </div>
+
+                <Form method="post" className="flex gap-2">
+                  <input type="hidden" name="intent" value="deploy" />
+                  <input type="hidden" name="subscription_id" value={s.subscription_id} />
+                  <input
+                    name="privnode_identifier"
+                    placeholder={t("subscriptions.deployPlaceholder")}
+                    className="flex-1 rounded border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs"
+                  />
+                  <button
+                    className="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs hover:bg-zinc-800 disabled:opacity-50"
+                    type="submit"
+                    disabled={!s.canDeploy}
+                    title={s.canDeploy ? "" : t("subscriptions.waitStripeActive")}
+                  >
+                    {t("subscriptions.deploy")}
+                  </button>
+                </Form>
+
+                <Form method="post" className="flex gap-2">
+                  <input type="hidden" name="intent" value="transfer" />
+                  <input type="hidden" name="subscription_id" value={s.subscription_id} />
+                  <input
+                    name="privnode_identifier"
+                    placeholder={t("subscriptions.transferPlaceholder")}
+                    className="flex-1 rounded border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs"
+                  />
+                  <button
+                    className="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs hover:bg-zinc-800"
+                    type="submit"
+                  >
+                    {t("subscriptions.transfer")}
+                  </button>
+                </Form>
+
+                <Form method="post">
+                  <input type="hidden" name="intent" value="deactivate" />
+                  <input type="hidden" name="subscription_id" value={s.subscription_id} />
+                  <button
+                    className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs hover:bg-zinc-800"
+                    type="submit"
+                  >
+                    {t("subscriptions.deactivate")}
+                  </button>
+                </Form>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
