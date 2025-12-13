@@ -7,7 +7,7 @@
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
-    "db:migrate": "node ./scripts/migrate.mjs",
+    "db:migrate": "node --env-file=.env ./scripts/migrate.mjs",
     "selfcheck": "node --experimental-transform-types ./scripts/selfcheck.ts"
   },
   "dependencies": {
