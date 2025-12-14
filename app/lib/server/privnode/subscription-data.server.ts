@@ -29,6 +29,7 @@ export type SubscriptionDataEntry = {
   duration: SubscriptionDataDuration;
   owner: number;
   status: SubscriptionDataStatus;
+  last_reset_at?: number;
 };
 
 export function normalizeSubscriptionData(input: any): SubscriptionDataEntry[] {

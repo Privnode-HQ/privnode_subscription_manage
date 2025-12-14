@@ -427,6 +427,14 @@ export default function Subscriptions() {
                     {s.privnodeEntry ? `$${(s.privnodeEntry["7d_limit"].available / 500000).toFixed(2)}` : "-"}
                   </div>
                 </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-zinc-500">
+                    {t("subscriptions.headers.lastReset")}
+                  </div>
+                  <div className="font-mono text-xs">
+                    {s.privnodeEntry?.last_reset_at ? fmtEpoch(s.privnodeEntry.last_reset_at) : "-"}
+                  </div>
+                </div>
               </div>
 
               {/* Actions section */}
