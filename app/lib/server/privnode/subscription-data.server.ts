@@ -36,10 +36,21 @@ export function normalizeSubscriptionData(input: any): SubscriptionDataEntry[] {
   if (!input) return [];
   if (Array.isArray(input)) return input as SubscriptionDataEntry[];
   if (typeof input === "string") {
-    const parsed = JSON.parse(input);
-    if (Array.isArray(parsed)) return parsed as SubscriptionDataEntry[];
+    const trimmed = input.trim();
+    if (!trimmed || trimmed === "null") return [];
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (!parsed) return [];
+      if (Array.isArray(parsed)) return parsed as SubscriptionDataEntry[];
+      // If it's an object, wrap it in an array
+      if (typeof parsed === "object") return [];
+    } catch (e) {
+      // Invalid JSON
+      return [];
+    }
   }
-  throw new Error("Invalid subscription_data format (expected JSON array)");
+  // For any other unexpected type, return empty array instead of throwing
+  return [];
 }
 
 export function buildInitialSubscriptionEntry(params: {
